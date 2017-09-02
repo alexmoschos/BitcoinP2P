@@ -26,6 +26,9 @@ executable Bitcoin-exe
   build-depends:       base
                      , Bitcoin
                      , network
+                     , time
+                     , binary
+                     , cpu
   default-language:    Haskell2010
 
 test-suite Bitcoin-test

@@ -1,8 +1,21 @@
+{-# LANGUAGE RecordWildCards #-}
 module Main where
+import           Data.Binary
 import           Data.Int
-import           Data.Word
+--import           Data.Word
 import           Network.Socket
-data Message = Message {
+instance Binary MVersion where
+    put MVersion {..} = do
+        put mVersion
+        put mServices
+        put mTimestamp
+        put mAddrRecv
+        put mAddrFrom
+        put mNonce
+        put mUsrAgent
+        put mRelay
+    get = undefined
+data MVersion = MVersion {
     mVersion   :: Int32,
     mServices  :: Word64,
     mTimestamp :: Int64,
@@ -11,7 +24,14 @@ data Message = Message {
     mNonce     :: Word64,
     mUsrAgent  :: String,
     mRelay     :: Bool
-}
+} deriving(Show)
+
 
 main :: IO ()
-main = return ()
+main =
+    let
+        a = MVersion 31900 1 1 "1" "1" 1 "" False
+    in
+        print $ encode a
+        --print $ decode $ encode a
+
