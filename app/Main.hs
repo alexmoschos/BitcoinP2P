@@ -1,12 +1,14 @@
 {-# LANGUAGE RecordWildCards #-}
 module Main where
 import           Data.Binary
+import           Data.Binary.Put
 import           Data.Int
 --import           Data.Word
 import           Network.Socket
 instance Binary MVersion where
     put MVersion {..} = do
-        put mVersion
+        putWord32le mVersion
+        {-
         put mServices
         put mTimestamp
         put mAddrRecv
@@ -14,9 +16,10 @@ instance Binary MVersion where
         put mNonce
         put mUsrAgent
         put mRelay
+        -}
     get = undefined
 data MVersion = MVersion {
-    mVersion   :: Int32,
+    mVersion   :: Word32,
     mServices  :: Word64,
     mTimestamp :: Int64,
     mAddrRecv  :: HostName,
