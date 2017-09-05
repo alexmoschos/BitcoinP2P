@@ -6,6 +6,7 @@ import           Data.Int
 --import           Data.Word
 import           Data.Time.Clock.POSIX
 import           Network.Socket
+import           System.Random
 instance Binary MVersion where
     put MVersion {..} = do
         putWord32le mVersion
@@ -15,6 +16,7 @@ instance Binary MVersion where
         put mAddrFrom
         putWord64le mNonce
         put mUsrAgent
+        putWord32le mStHeight
         putBoolVal mRelay
     get = undefined
 
@@ -26,20 +28,40 @@ data MVersion = MVersion {
     mVersion   :: Word32,
     mServices  :: Word64,
     mTimestamp :: Word64,
-    mAddrRecv  :: HostName,
+    mAddrRecv  :: MNetwork,
     --network adress struct needed
-    mAddrFrom  :: HostName,
+    mAddrFrom  :: MNetwork,
     mNonce     :: Word64,
     mUsrAgent  :: String,
+    mStHeight  :: Word32,
     mRelay     :: Bool
 } deriving(Show)
 
+instance Binary MNetwork where
+    put MNetwork {..} = do
+        putWord64le mService
+        put mIp
+        putWord16le mPort
+    get = undefined
+
+
+data MNetwork = MNetwork {
+    --mTime    :: Word64,
+    mService :: Word64,
+    mIp      :: String,
+    mPort    :: Word16
+} deriving (Show)
 
 main :: IO ()
 main = do
+    nonce <- randomIO :: IO Word64
     time <- getPOSIXTime
     let t = round time
-        a = MVersion 31900 1 t "127.0.0.1" "127.0.0.1" 1 "" False
+        services = 1
+        host = MNetwork services "127.0.0.1" 44
+        host2 = MNetwork services "127.0.0.1" 44
+        -- Theloume to user agent na einai 0x00 1byte
+        a = MVersion 31900 services t host host2 1 "" 0 False
     print a
     encodeFile "a.txt" a
 
