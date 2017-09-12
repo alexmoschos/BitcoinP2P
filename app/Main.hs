@@ -7,6 +7,9 @@ import           Data.Int
 import           Data.Time.Clock.POSIX
 import           Network.Socket
 import           System.Random
+-- import           Data.ByteString
+import           Data.ByteString.Char8
+
 instance Binary MVersion where
     put MVersion {..} = do
         putWord32le mVersion
@@ -46,7 +49,7 @@ instance Binary MNetwork where
 
 data MHeader = MHeader {
     mMagic :: Word32,
-    mCommand :: [String],
+    mCommand :: String,
     mPayload :: Word32,
     mCheckSum :: Word32
 } deriving (Show)
@@ -54,9 +57,10 @@ data MHeader = MHeader {
 instance Binary MHeader where
    put MHeader {..} = do
        putWord32le mMagic
-       put mCommand
+       put $ convert mCommand
        putWord32le mPayload
        putWord32le mCheckSum
+   get = undefined
 
 data MNetwork = MNetwork {
     --mTime    :: Word64,
@@ -64,6 +68,17 @@ data MNetwork = MNetwork {
     mIp      :: String,
     mPort    :: Word16
 } deriving (Show)
+
+convert :: String -> ByteString
+convert str =
+    pack $ Prelude.take 12 $ str ++ repeat '\NUL'
+  -- let
+  --       bs = pack str
+  --       go 0 bs = bs
+  --       go n bs = go (n-1) $ snock
+  --   in
+  --       go n bs
+  --
 
 main :: IO ()
 main = do
@@ -75,6 +90,6 @@ main = do
         host2 = MNetwork services "127.0.0.1" 44
         -- Theloume to user agent na einai 0x00 1byte
         a = MVersion 31900 services t host host2 1 "" 0 False
+        b = MHeader 3669344250 "version" 85 0
     print a
-    encodeFile "a.txt" a
-
+    encodeFile "a.txt" b
