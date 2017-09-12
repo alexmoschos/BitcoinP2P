@@ -44,6 +44,19 @@ instance Binary MNetwork where
         putWord16le mPort
     get = undefined
 
+data MHeader = MHeader {
+    mMagic :: Word32,
+    mCommand :: [String],
+    mPayload :: Word32,
+    mCheckSum :: Word32
+} deriving (Show)
+
+instance Binary MHeader where
+   put MHeader {..} = do
+       putWord32le mMagic
+       put mCommand
+       putWord32le mPayload
+       putWord32le mCheckSum
 
 data MNetwork = MNetwork {
     --mTime    :: Word64,
