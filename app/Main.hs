@@ -1,10 +1,14 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE RecordWildCards   #-}
 module Main where
+
 import           Data.Binary
 import           Data.Binary.Put
-import           Data.Int
---import           Data.Word
+import           Crypto.Hash
+import qualified Data.ByteArray             as A
+import qualified Data.ByteString            as B
+-- import           Data.Int
+-- import           Data.Word
 import           Data.Time.Clock.POSIX
 import           Network.Socket
 import           System.Random
@@ -12,6 +16,13 @@ import           System.Random
 import           Data.ByteString.Char8      as BS
 import           Data.ByteString.Lazy.Char8 as BL
 import           Debug.Trace
+
+-- newtype VarInt = VarInt { getVarInt :: Word64 }
+--     deriving (Eq, Show, Read)
+
+newtype VarInt = VarInt Word64
+
+
 
 instance Binary MVersion where
     put MVersion {..} = do
@@ -38,52 +49,56 @@ data MVersion = MVersion {
     --network adress struct needed
     mAddrFrom  :: MNetwork,
     mNonce     :: Word64,
+    -- mUsrAgent  :: VarString,
     mUsrAgent  :: String,
     mStHeight  :: Word32,
     mRelay     :: Bool
 } deriving(Show)
 
 instance Binary MNetwork where
-    put MNetwork {..} = do
-        putWord64le mService
-        put mIp
-        putWord16le mPort
+    put (MNetwork serv (SockAddrInet port addr)) = do
+            putWord64le serv
+            putWord32be 0x00000000
+            putWord32be 0x00000000
+            putWord32be 0x0000ffff
+            putWord32host addr
+            putWord16be $ fromIntegral port
+
+    -- put MNetwork {..} = do
+    --     putWord64le mService
+    --     put mIp
+    --     putWord16le mPort
     get = undefined
 
 data MHeader = MHeader {
     mMagic    :: Word32,
     mCommand  :: String,
     mPayload  :: Word32,
-    mCheckSum :: Word32
+    mCheckSum :: BS.ByteString
+    -- mCheckSum :: Word32
 } deriving (Show)
 
 instance Binary MHeader where
 
     put MHeader {..} = do
-        putWord32be mMagic
-        --putWord32le 42
+        putWord32le mMagic
         putByteString $ convert mCommand
         putWord32le mPayload
-        putWord32le mCheckSum
+        putByteString mCheckSum
+        -- putWord32le mCheckSum
     get = undefined
 
 data MNetwork = MNetwork {
     --mTime    :: Word64,
     mService :: Word64,
-    mIp      :: String,
-    mPort    :: Word16
+    mIP      :: SockAddr
+    -- mIp      :: String,
+    -- mPort    :: Word16
 } deriving (Show)
 
 convert :: String -> BS.ByteString
 convert str =
-    BS.pack $ Prelude.take 12 $ "version" ++ Prelude.repeat '\NUL'
-  -- let
-  --       bs = pack str
-  --       go 0 bs = bs
-  --       go n bs = go (n-1) $ snock
-  --   in
-  --       go n bs
-  --
+    BS.pack $ Prelude.take 12 $ str ++ Prelude.repeat '\NUL'
 
 main :: IO ()
 main = do
@@ -91,11 +106,12 @@ main = do
     time <- getPOSIXTime
     let t = round time
         services = 1
-        host = MNetwork services "127.0.0.1" 44
-        host2 = MNetwork services "127.0.0.1" 44
+        host = MNetwork services $ SockAddrInet (44::PortNumber) $ tupleToHostAddress (127,0,0,1)
+        -- host2 = MNetwork services "127.0.0.1" 44
         -- Theloume to user agent na einai 0x00 1byte
-        a = MVersion 31900 services t host host2 nonce "" 0 False
-        b = MHeader 0 "version" 85 0
+        a = MVersion 60002 services t host host nonce "" 0 False
+        -- a = MVersion 31900 services 0x0000000000000000 host host2 0x0000000000000000 "" 0 False
+        b = MHeader 0 "version" 85 (BS.pack "0")
         rrr = A b a
     -- print a
     encodeFile "a.txt" rrr
@@ -107,12 +123,16 @@ instance Binary A where
 
     put (A _ msg) = do
         let payload= encode' msg
-            chk = 0
+            -- chk = 0
+            -- chk' = checksum $ BS.pack "qwertyuiopasdfghjklzxcvbnm"
+            chk = checksum payload
             len = traceShowId ((fromIntegral $ BS.length payload) :: Word32)
             --len = fromIntegral $ BS.length payload
-            header = MHeader 0 "version" len chk
+            header = MHeader 0xd9b4bef9 "version" len chk
             --header = MessageHeader networkMagic cmd len chk
-        putByteString $ (encode' header) `BS.append` payload
+        putByteString $ encode' header `BS.append` payload
+        -- putByteString $ encode' header
+
 
 encode' :: Binary a => a -> BS.ByteString
 encode' = toStrictBS . encode
@@ -120,3 +140,11 @@ encode' = toStrictBS . encode
 -- | Transforms a lazy bytestring into a strict bytestring
 toStrictBS :: BL.ByteString -> BS.ByteString
 toStrictBS = BS.concat . BL.toChunks
+
+-- |Computes the SHA256 hash of the given @'ByteString'@.
+sha256 :: BS.ByteString -> BS.ByteString
+sha256 bs = let digest = hash bs :: Digest SHA256 in B.pack $ A.unpack digest
+
+-- | Computes first 4 bytes of sha256(sha256(payload)).
+checksum :: BS.ByteString -> BS.ByteString
+checksum bs = BS.take 4 (sha256.sha256 $ bs)
