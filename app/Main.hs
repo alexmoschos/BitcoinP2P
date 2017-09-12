@@ -16,6 +16,8 @@ import           System.Random
 import           Data.ByteString.Char8      as BS
 import           Data.ByteString.Lazy.Char8 as BL
 import           Debug.Trace
+import           Network
+import           System.IO
 
 -- newtype VarInt = VarInt { getVarInt :: Word64 }
 --     deriving (Eq, Show, Read)
@@ -108,15 +110,23 @@ main = do
     time <- getPOSIXTime
     let t = round time
         services = 1
-        host = MNetwork services $ SockAddrInet (44::PortNumber) $ tupleToHostAddress (127,0,0,1)
+        host = MNetwork services $ SockAddrInet (8333::PortNumber) $ tupleToHostAddress (139,99,131,171)
+        myhost = MNetwork services $ SockAddrInet (44::PortNumber) $ tupleToHostAddress (87,203,108,87)
         -- host2 = MNetwork services "127.0.0.1" 44
         -- Theloume to user agent na einai 0x00 1byte
         -- a = MVersion 60002 services t host host nonce "" 0 False
-        a = MVersion 60002 services t host host nonce "/Satoshi:0.7.2/" 0 False
+        a = MVersion 60002 services t host myhost nonce "/Satoshi:0.7.2/" 0 False
         -- a = MVersion 31900 services 0x0000000000000000 host host2 0x0000000000000000 "" 0 False
         b = MHeader 0 "version" 85 (BS.pack "0")
         rrr = A b a
     -- print a
+    print "Hello"
+    h <- connectTo "ns537674.ip-139-99-131.net" $ PortNumber 8333
+    print "Hello"
+
+    hPrint h $ encode' rrr
+    print "Hello"
+
     encodeFile "a.txt" rrr
 
 data A = A MHeader MVersion
