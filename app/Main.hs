@@ -2,9 +2,9 @@
 {-# LANGUAGE RecordWildCards   #-}
 module Main where
 
+import           Crypto.Hash
 import           Data.Binary
 import           Data.Binary.Put
-import           Crypto.Hash
 import qualified Data.ByteArray             as A
 import qualified Data.ByteString            as B
 -- import           Data.Int
@@ -32,7 +32,9 @@ instance Binary MVersion where
         put mAddrRecv
         put mAddrFrom
         putWord64le mNonce
-        put mUsrAgent
+        let len = fromIntegral $ Prelude.length mUsrAgent
+        putWord8 len
+        putByteString $ BS.pack mUsrAgent
         putWord32le mStHeight
         putBoolVal mRelay
     get = undefined
@@ -109,7 +111,8 @@ main = do
         host = MNetwork services $ SockAddrInet (44::PortNumber) $ tupleToHostAddress (127,0,0,1)
         -- host2 = MNetwork services "127.0.0.1" 44
         -- Theloume to user agent na einai 0x00 1byte
-        a = MVersion 60002 services t host host nonce "" 0 False
+        -- a = MVersion 60002 services t host host nonce "" 0 False
+        a = MVersion 60002 services t host host nonce "/Satoshi:0.7.2/" 0 False
         -- a = MVersion 31900 services 0x0000000000000000 host host2 0x0000000000000000 "" 0 False
         b = MHeader 0 "version" 85 (BS.pack "0")
         rrr = A b a
