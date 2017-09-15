@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<Contents>
+    <Version Magic="0xd9b4bef9" Command="version" Protocol = "60002" Satoshi = "/Satoshi:0.7.2/"/>
+    <MyIp>0.0.0.0</MyIp>
+    <MyPort>0</MyPort>
+    <Ip>0.0.0.0</Ip>
+    <Port>0</Port>
+    <Services>1</Services>
+    <BlockId>212672</BlockId>
+    <Relay>False</Relay>
+    <Time>1355854353</Time>
+    <Nonce>0x6517E68C5DB32E3B</Nonce>
+</Contents>
