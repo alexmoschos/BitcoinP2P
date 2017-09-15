@@ -207,7 +207,7 @@ main2 XMLreader{..} = do
     System.IO.putStrLn $ "Connecting to " ++ xmlIp ++ ":" ++ show xmlPort
     h <- connectTo xmlIp $ PortNumber xmlPort
     BS.putStrLn $ encode' bin
-    hPrint h $ encode' bin
+    BS.hPutStr h $ encode' bin
 --    msg <- System.IO.hGetLine h
 --    print msg
 --    listenChars h
