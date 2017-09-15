@@ -7,6 +7,7 @@ import           System.Environment
 import           Crypto.Hash
 import           Data.Binary
 import           Data.Binary.Put
+import           Data.Binary.Get
 import qualified Data.ByteArray             as A
 import qualified Data.ByteString            as B
 -- import           Data.Int
@@ -17,20 +18,12 @@ import           Network.Socket
 import           System.Random
 -- import           Data.ByteString
 import           Data.ByteString.Lazy as L
-import           Text.XML.Expat.SAX
 import           Data.ByteString.Char8      as BS
 import           Data.ByteString.Lazy.Char8 as BL
 import           Debug.Trace
 import           Network
 import           System.IO
 import           Text.XML.Light
-
--- newtype VarInt = VarInt { getVarInt :: Word64 }
---     deriving (Eq, Show, Read)
-
-newtype VarInt = VarInt Word64
-
-
 
 instance Binary MVersion where
     put MVersion {..} = do
@@ -46,7 +39,21 @@ instance Binary MVersion where
         putByteString $ BS.pack mUsrAgent
         putWord32le mStHeight
 --        putBoolVal mRelay
-    get = undefined
+
+    get =
+        do
+      version <- getWord32le
+      services <- getWord64le
+      time <- getWord64le
+      addrRec <- get
+      addrFrom <- get
+      nonce <- getWord64le
+      len <- getWord8
+      agent <- getByteString $ fromIntegral len
+      height <- getWord32le
+      rel <- getWord8
+      let relbl = rel == 1
+      return $ MVersion version services time addrRec addrFrom nonce (BS.unpack agent) height relbl
 
 putBoolVal :: Bool -> Put
 putBoolVal True  = putWord8 1
@@ -75,11 +82,15 @@ instance Binary MNetwork where
             putWord32host addr
             putWord16be $ fromIntegral port
 
-    -- put MNetwork {..} = do
-    --     putWord64le mService
-    --     put mIp
-    --     putWord16le mPort
-    get = undefined
+    get =
+          do
+        serv <- getWord64le
+        getWord32be
+        getWord32be
+        getWord32be
+        addr <- getWord32be
+        port <- getWord16be
+        return $ MNetwork serv (SockAddrInet (fromIntegral port) addr)
 
 data MHeader = MHeader {
     mMagic    :: Word32,
@@ -97,22 +108,21 @@ instance Binary MHeader where
         putWord32le mPayload
         putByteString mCheckSum
         -- putWord32le mCheckSum
-    get = undefined
+    get = do
+      magic <- getWord32le
+      command <- getByteString 12
+      payload <- getWord32le
+      ckecksum <- getByteString 4
+      return $ MHeader magic (show command) payload ckecksum
 
 data MNetwork = MNetwork {
-    -- mTime    :: Word64,
     mService :: Word64,
     mIP      :: SockAddr
-    -- mIp      :: String,
-    -- mPort    :: Word16
 } deriving (Show)
 
 convert :: String -> BS.ByteString
 convert str =
     BS.pack $ Prelude.take 12 $ str ++ Prelude.repeat '\NUL'
-
-data Quote = Quote { symbol :: String,
-                     price  :: Float}
 
 data XMLreader =
         XMLreader {
@@ -193,7 +203,7 @@ main2 XMLreader{..} = do
 --        nonceWiki = read "0x6517E68C5DB32E3B"
         head = MHeader xmlMagic xmlCommand 85 (BS.pack "0")
         body = MVersion xmlVersion xmlServices time host myhost nonce xmlSatoshi xmlBlockId xmlRelay
-        bin = A head body
+        bin = Version head body
         listenChars h = do
             c <- hGetChar h
             putChar c
@@ -210,27 +220,42 @@ main2 XMLreader{..} = do
     BS.hPutStr h $ encode' bin
 --    msg <- System.IO.hGetLine h
 --    print msg
---    listenChars h
---    msg <- System.IO.hGetLine h
---    System.IO.putStrLn msg
---    print $ BS.length rrr
+    hd <- BL.hGet h 24
+    print $ BL.length hd
+    let Right (bs, bo, a) = decodeOrFail hd
+    let ls = go a
+    print a
 
-data A = A MHeader MVersion
-instance Binary A where
+    let MHeader q w payload r = a
 
-    get = undefined
+    body <- BL.hGet h (fromIntegral payload)
+    print $ BL.length body
+    let Right (bs', bo', a') = decodeOrFail body
+    let ls' = go' a'
+    print a'
+    return ()
 
-    put (A (MHeader mag ver _ _) msg) = do
+go :: MHeader -> MHeader
+go ls = ls
+
+go' :: MVersion -> MVersion
+go' ls = ls
+
+data Version = Version MHeader MVersion
+instance Binary Version where
+
+    get = do
+        head <- get
+        body <- get
+        return $ Version head body
+
+    put (Version (MHeader mag ver _ _) msg) = do
         let payload= encode' msg
-            -- chk = 0
-            -- chk' = checksum $ BS.pack "qwertyuiopasdfghjklzxcvbnm"
             chk = checksum payload
             len = traceShowId ((fromIntegral $ BS.length payload) :: Word32)
             --len = fromIntegral $ BS.length payload
             header = MHeader mag ver len chk
-            --header = MessageHeader networkMagic cmd len chk
         putByteString $ encode' header `BS.append` payload
-        -- putByteString $ encode' header
 
 toHostAddress :: String -> HostAddress
 toHostAddress str =

@@ -34,7 +34,6 @@ executable Bitcoin-exe
                      , random
                      , time
                      , split
-                     , hexpat
                      , xml
   default-language:    Haskell2010
 

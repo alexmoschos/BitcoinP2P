@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <Contents>
     <Version Magic="0xd9b4bef9" Command="version" Protocol = "60002" Satoshi = "/Satoshi:0.7.2/"/>
-    <MyIp>188.4.252.143</MyIp>
+    <MyIp>213.249.49.222</MyIp>
 <!--    <MyIp>10.0.0.1</MyIp> -->
     <MyPort>8333</MyPort>
 <!--    <Ip>88.99.175.119</Ip> -->
