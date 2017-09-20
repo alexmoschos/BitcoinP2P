@@ -2,10 +2,12 @@
 
 module Main where
 
+import           Protocol.Version
+import           Protocol.Verack
+
 import           System.Environment
 import           Lib
 import           XmlParser
-import           Protocol.Version
 import           Data.Binary
 
 import qualified Data.ByteString.Char8      as BS
@@ -54,4 +56,11 @@ main2 path = do
     let Right (_, _, body) = decodeOrFail bodyBin
     let dummy' = body :: MVersion
     putStrLn $ showMVersion body
+
+    verackBin <- BL.hGet h (fromIntegral sizeOfVerackHeader)
+    print $ BL.length verackBin
+    let Right (_, _, verack) = decodeOrFail verackBin
+    let dummy'' = verack :: Verack
+    putStrLn $ showVerack verack
+
     return ()
