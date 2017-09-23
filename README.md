@@ -1,6 +1,6 @@
 # BitcoinP2P
 
-This project started as an assignment from the IOHK "Haskell and Cryptocyrrencies"
+This project started as an assignment from the IOHK "Haskell and Cryptocurrencies"
 
 summer course held in Athens July-September 2017.
 
