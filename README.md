@@ -1,8 +1,8 @@
 # BitcoinP2P
 
-This project started as an assignment from the IOHK "haskell and cryptocyrrencies"
+This project started as an assignment from the IOHK "Haskell and Cryptocyrrencies"
 
-summer course held in Athens July-Setpember 2017.
+summer course held in Athens July-September 2017.
 
 We would in particular like to thank our instructors:
 
@@ -18,6 +18,6 @@ Of course, we are to blame for any mistakes.
 
 In this project we mainly focus on implementing part of the bitcoin protocol,
 
-communicating with other Nodes and using haskell. For now, we do not care a lot
+communicating with other Nodes and using Haskell. For now, we do not care a lot
 
 about scallability, robustness, speed or readability.
