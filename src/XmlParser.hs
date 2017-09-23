@@ -2,6 +2,7 @@
 
 module XmlParser where
 
+import           Protocol.Header
 import           Protocol.Version
 import           Lib
 
@@ -81,7 +82,7 @@ parseVersion XMLreader{..} = do
   let
       host = MNetwork xmlServices $ SockAddrInet xmlPort $ toHostAddress xmlIp -- tupleToHostAddress (0,0,0,0) --(88,99,175,119)
       myhost = MNetwork xmlServices $ SockAddrInet xmlMyPort $ toHostAddress xmlMyIp --(0,0,0,0)
-      head = MHeader xmlMagic xmlCommand 85 (BS.pack "0")
-      body = MVersion xmlVersion xmlServices time host myhost nonce xmlSatoshi xmlBlockId xmlRelay
-      version = Version head body
-  return version
+      head = Header xmlMagic xmlCommand 85 (BS.pack "0")
+      body = Version xmlVersion xmlServices time host myhost nonce xmlSatoshi xmlBlockId xmlRelay
+--      version = Version head body
+  return body

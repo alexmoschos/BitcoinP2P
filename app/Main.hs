@@ -1,9 +1,11 @@
-{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Main where
 
+import           Protocol.Header
 import           Protocol.Version
 import           Protocol.Verack
+import           Protocol.Message
 
 import           System.Environment
 import           Lib
@@ -31,8 +33,9 @@ main2 path = do
     putStrLn "Encoding..."
 
     version <- parseVersion input
-    encodeFile "out.txt" version
-    let bin = encode' version
+    let (_,bin) = myEncode version
+    BS.writeFile "out.txt" bin
+--    let bin = encode' version
 
     putStrLn ""
     putStrLn "Give any input to continue:"
@@ -40,27 +43,12 @@ main2 path = do
     putStrLn $ "Connecting to " ++ xmlIp ++ ":" ++ show xmlPort
 
     h <- connectTo xmlIp $ PortNumber xmlPort
-    BS.putStrLn bin
     BS.hPutStr h bin
 
-    hdBin <- BL.hGet h sizeOfVersionHeader
-    print $ BL.length hdBin
-    let Right (_, _, head) = decodeOrFail hdBin
-    let dummy = head :: MHeader
-    putStrLn $ showMHeader head
+    vmsg <- getMessage h
+    print vmsg
 
-    let len = mPayload head
-
-    bodyBin <- BL.hGet h (fromIntegral len)
-    print $ BL.length bodyBin
-    let Right (_, _, body) = decodeOrFail bodyBin
-    let dummy' = body :: MVersion
-    putStrLn $ showMVersion body
-
-    verackBin <- BL.hGet h (fromIntegral sizeOfVerackHeader)
-    print $ BL.length verackBin
-    let Right (_, _, verack) = decodeOrFail verackBin
-    let dummy'' = verack :: Verack
-    putStrLn $ showVerack verack
+    cmsg <- getMessage h
+    print cmsg
 
     return ()
