@@ -5,9 +5,8 @@ module Protocol.Message where
 import           Protocol.Header
 import           Protocol.Version
 import           Protocol.Verack
+import           Protocol.Addr
 
-import           Network
-import           Network.Socket
 import           System.IO
 import qualified Data.List as L
 
@@ -18,13 +17,16 @@ data Package = Package Header Message
     deriving(Show)
 
 data Message =
-          MVersion Version
-        | MVerack Verack
+          NoMessage
+        | MVersion Version
+        | MVerack  Verack
+        | MAddr    Addr
     deriving(Show)
 
 instance Binary Message where
     put (MVersion m) = put m
     put (MVerack  m) = put m
+    put (MAddr  m) = put m
 
     get = undefined
 
@@ -37,7 +39,7 @@ instance Binary Package where
 
 getMessage :: Handle -> IO Package
 getMessage h = do
-    hdBin <- BL.hGet h sizeOfHeader
+    hdBin <- BL.hGet h sizeHeader
     let
         hd@Header{..} = decode hdBin
 
@@ -45,8 +47,12 @@ getMessage h = do
 
     bodyBin <- BL.hGet h (fromIntegral len)
     print $ BL.length bodyBin
-    let
-        msg
-            | L.isInfixOf "version" mCommand = MVersion $ decode bodyBin
-            | L.isInfixOf "verack"  mCommand = MVerack  $ decode bodyBin
+    msg <-
+        if      L.isInfixOf "version" mCommand
+        then    return $ MVersion $ decode bodyBin
+        else if L.isInfixOf "verack"  mCommand
+        then    return $ MVerack  $ decode bodyBin
+        else if L.isInfixOf "addr"  mCommand
+        then    return $ MAddr $ decode bodyBin
+        else    return NoMessage
     return $ Package hd msg

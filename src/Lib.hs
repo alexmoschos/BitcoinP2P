@@ -6,7 +6,6 @@ import qualified Data.ByteArray             as A
 import qualified Data.ByteString            as B
 import           Data.ByteString.Char8      as BS
 import           Data.ByteString.Lazy.Char8 as BL
-import           Network
 import           Network.Socket
 import           Data.List.Split
 

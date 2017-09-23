@@ -16,8 +16,6 @@ import           Data.Binary.Get
 import           Data.ByteString.Char8      as BS
 import           Debug.Trace
 
-sizeOfHeader :: Int
-sizeOfHeader = 24
 
 magic :: String
 magic = "0xd9b4bef9"
@@ -28,6 +26,10 @@ data Header = Header {
     mPayload  :: Word32,
     mCheckSum :: BS.ByteString
 } deriving (Show)
+
+
+sizeHeader :: Int
+sizeHeader = 24
 
 instance Binary Header where
     put Header{..} = do
@@ -78,9 +80,20 @@ class Binary b => Body b where
       in
           (header,encode' header `BS.append` payload)
 
+sizeMNetwork :: Int
+sizeMNetwork = 26
+
 data MNetwork = MNetwork {
     mService :: Word64,
     mIP      :: SockAddr
+} deriving (Show)
+
+sizeNetwork :: Int
+sizeNetwork = 34
+
+data Network = Network {
+    nTimestamp :: Word64,
+    nRest      :: MNetwork
 } deriving (Show)
 
 instance Binary MNetwork where
@@ -94,17 +107,27 @@ instance Binary MNetwork where
 
     get = do
         serv <- getWord64le
-        getWord32be
-        getWord32be
-        getWord32be
+        _    <- getWord32be
+        _    <- getWord32be
+        _    <- getWord32be
         addr <- getWord32be
         port <- getWord16be
         return $ MNetwork serv (SockAddrInet (fromIntegral port) addr)
+
+instance Binary Network where
+    put Network{..} = do
+        putWord64le nTimestamp
+        put nRest
+
+    get = do
+        time     <- getWord64le
+        rest     <- get
+        return $ Network time rest
 
 convert :: String -> BS.ByteString
 convert str =
     BS.pack $ Prelude.take 12 $ str ++ Prelude.repeat '\NUL'
 
 capitalized :: String -> String
-capitalized (head:tail) = C.toUpper head : Prelude.map C.toLower tail
+capitalized (hd:tl) = C.toUpper hd : Prelude.map C.toLower tl
 capitalized [] = []

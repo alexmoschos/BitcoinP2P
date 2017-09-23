@@ -3,19 +3,13 @@
 module Main where
 
 import           Protocol.Header
-import           Protocol.Version
-import           Protocol.Verack
 import           Protocol.Message
 
 import           System.Environment
-import           Lib
 import           XmlParser
-import           Data.Binary
 
 import qualified Data.ByteString.Char8      as BS
-import qualified Data.ByteString.Lazy.Char8 as BL
 import           Network
-import           Network.Socket
 
 main :: IO ()
 main = do
@@ -39,7 +33,7 @@ main2 path = do
 
     putStrLn ""
     putStrLn "Give any input to continue:"
-    getLine
+    _ <- getLine
     putStrLn $ "Connecting to " ++ xmlIp ++ ":" ++ show xmlPort
 
     h <- connectTo xmlIp $ PortNumber xmlPort
@@ -50,5 +44,8 @@ main2 path = do
 
     cmsg <- getMessage h
     print cmsg
+
+    amsg <- getMessage h
+    print amsg
 
     return ()

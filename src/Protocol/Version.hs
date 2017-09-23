@@ -3,22 +3,13 @@
 
 module Protocol.Version where
 
-import           Lib
 import           Protocol.Header
-
-import           System.IO
-import           System.Random
-import           Network
-import           Network.Socket
-import           Crypto.Hash
-import qualified Data.Char as C
 
 import           Data.Binary
 import           Data.Binary.Put
 import           Data.Binary.Get
 
 import           Data.ByteString.Char8      as BS
-import           Debug.Trace
 
 data Version = Version {
     mVersion   :: Word32,
@@ -78,7 +69,7 @@ showMVersion Version{..} = "Version:" ++
     "\n  UsrAgent  " ++ show mUsrAgent  ++
     "\n  StHeight  " ++ show mStHeight  ++
     "\n  Relay     " ++ show mRelay     ++
-        if fromIntegral mVersion < 70001 then "    (not supported)" else "" ++
+        if hasRelay mVersion then "    (not supported)" else "" ++
     "\n"
 
 putBoolVal :: Word32 -> Bool -> Put
@@ -86,4 +77,4 @@ putBoolVal n bl = if hasRelay n then put "" else
     putWord8 $ if bl then 1 else 0
 
 hasRelay :: Word32 -> Bool
-hasRelay n = fromIntegral n < 70001
+hasRelay n = fromIntegral n < (70001 :: Int)
